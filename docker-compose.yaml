@@ -1,0 +1,44 @@
+services:
+  keycloak-db:
+    image: postgres:15
+    container_name: ${POSTGRES_CONTAINER_NAME}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - kc-postgres-data:/var/lib/postgresql/data
+    networks:
+      - oauth-network
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: ${KEYCLOAK_CONTAINER_NAME}
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL_HOST: ${POSTGRES_HOST}
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: ${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME}
+    volumes:
+      - ./custom-provider/greetings-0.0.1-SNAPSHOT.jar:/opt/keycloak/providers/welcome-listener.jar
+      - ./adorsys-tm-01:/opt/keycloak/themes/adorsys-tm-01
+    ports:
+      - "${KEYCLOAK_PORT}:8080"
+    depends_on:
+      - keycloak-db
+    networks:
+      - oauth-network
+
+volumes:
+  kc-postgres-data:
+networks:
+  oauth-network:
+    driver: bridge
